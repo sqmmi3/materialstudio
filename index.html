@@ -3,21 +3,42 @@
   <head>
     <title>Flux Material Studio</title>
     <style>
-      body { margin: 0; background: #111; color: white; font-family: sans-serif; }
+      body { margin: 0; background: #111; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
       canvas { display: block; width: 100vw; height: 100vh; }
-      #ui { position: absolute; width: 20px; left: 20px; display: flex; flex-direction: column; gap: 10px; padding: 2rem; }
-      button { padding: 10px; cursor: pointer; background: #333; color: white; border: 1px solid #555; min-width: 5vh; }
+      #ui { 
+        position: absolute;
+        width: 20px;
+        left: 20px;
+        width: 280px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+        background: rgba(40, 40, 40, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        z-index: 10;
+        margin-top: 1rem;
+      }
+      button { padding: 10px; cursor: pointer; background: #444; color: white; border: 1px solid #666; border-radius: 4px; transition: 0.2s; }
+      button:hover { background: #555; border-color: #888; }
+      label { font-size: 0.8rem; color: #ccc; margin-top: 5px; }
+      imput[type='range'] {width: 100%; cursor: pointer; }
+      hr { border: 0; border-top: 1px solid #555; margin: 10px 0; }
     </style>
   </head>
   <body>
     <div id="ui">
-      <div class="toggle-group" style="margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
         <button id="view-chair">View Chair</button>
         <button id="view-cabinet">View Cabinet</button>
       </div>
 
       <hr />
-      <div style="margin-bottom: 20px;">
+
+      <label for="material">Material Finish</label>
+      <div id="material" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
         <button id="btn-oak">Oak Wood</button>
         <button id="btn-steel">Brushed Steel</button>
       </div>
@@ -31,7 +52,19 @@
         
         <label for="slider-d">Depth: <span id="val-d">0.5</span>m</label>
         <input type="range" id="slider-d" min="0.3" max="1.0" step="0.05" value="0.5">
+        
       </div>
+      <label for="slider-time">Time of Day: <span id="val-time">12</span>:00</label>
+      <input type="range" id="slider-time" min="0" max="23.9" step="0.1" value="12">
+      
+      <hr />
+
+      <button id="btn-screenshot" style="background: #2d5a27;">Save PNG</button>
+      <button id="btn-specs" style="background: #2a4d69;">Download Specs</button>
+      
+      <hr />
+
+      <button id="btn-lamp" style="margin-top: 10px;">Toggle Lamp</button>
     </div>
     <canvas id="app"></canvas>
     <script type="module" src="/src/main.ts"></script>

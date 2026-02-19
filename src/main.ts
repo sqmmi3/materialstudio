@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { PMREMGenerator } from 'three';
 import { Cabinet } from './Cabinet';
+import { Showroom } from './Showroom';
 
 let chairModel: THREE.Group;
 let currentView: 'chair' | 'cabinet' = 'chair';
@@ -14,7 +15,8 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#app') as HTMLCanvasElement,
-  antialias: true
+  antialias: true,
+  preserveDrawingBuffer: true
 });
 
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -77,38 +79,49 @@ function setView(view: 'chair' | 'cabinet') {
 document.getElementById('view-chair')?.addEventListener('click', () => setView('chair'));
 document.getElementById('view-cabinet')?.addEventListener('click', () => setView('cabinet'));
 
-// 5. Floor & Lights
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(10, 10),
-  new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5, metalness: 0.2 })
-);
-floor.rotation.x = -Math.PI / 2;
-floor.position.y = -1;
-floor.receiveShadow = true;
-scene.add(floor);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.05);
+scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
 directionalLight.position.set(5, 5, 5);
 directionalLight.castShadow = true;
-directionalLight.shadow.mapSize.width = 2048;
-directionalLight.shadow.mapSize.height = 2048;
+directionalLight.shadow.mapSize.width = 4096;
+directionalLight.shadow.mapSize.height = 4096;
 directionalLight.shadow.bias = -0.0001;
-// Increase the "box" so shadows don't get cut off
 directionalLight.shadow.camera.near = 0.5;
-directionalLight.shadow.camera.far = 50;
-directionalLight.shadow.camera.left = -10;
-directionalLight.shadow.camera.right = 10;
-directionalLight.shadow.camera.top = 10;
-directionalLight.shadow.camera.bottom = -10;
+directionalLight.shadow.camera.far = 100;
+directionalLight.shadow.camera.left = -15;
+directionalLight.shadow.camera.right = 15;
+directionalLight.shadow.camera.top = 15;
+directionalLight.shadow.camera.bottom = -15;
+directionalLight.shadow.radius = 4;
+directionalLight.shadow.blurSamples = 25;
 scene.add(directionalLight);
 
 const helper = new THREE.DirectionalLightHelper(directionalLight, 1);
 scene.add(helper);
 
+let lampOn = false;
+document.getElementById('btn-lamp')?.addEventListener('click', () => {
+  lampOn = !lampOn;
+  pointLight.intensity = lampOn ? 50 : 0;  
+  const btn = document.getElementById('btn-lamp');
+  if (btn) btn.style.background = lampOn ? '#ffc107' : '#444';
+});
+
+const pointLight = new THREE.PointLight(0xfff0dd, 0, 10);
+pointLight.position.set(0, 5, 0); 
+pointLight.castShadow = true;
+pointLight.shadow.mapSize.width = 1024;
+pointLight.shadow.bias = -0.001;
+
+scene.add(pointLight);
+
 // 6. Controls & UI
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-camera.position.set(0, 2, 7);
+controls.target.set(0, 1, 0);
+camera.position.set(8, 5, 10);
 
 document.querySelector('#btn-oak')?.addEventListener('click', () => {
   material.color.set(0x8b5a2b);
@@ -122,16 +135,21 @@ document.querySelector('#btn-steel')?.addEventListener('click', () => {
   material.metalness = 1.0;
 });
 
+const sliderTime = document.getElementById('slider-time') as HTMLInputElement;
+
+const showroom = new Showroom();
+scene.add(showroom.mesh);
+
 // 7. Animation Loop
 function updateSun(light: THREE.DirectionalLight) {
-  const now = new Date();
-  const hours = now.getHours() + now.getMinutes() / 60;
+  const hours = parseFloat(sliderTime.value);
+  document.getElementById('val-time')!.innerText = Math.floor(hours).toString();
   const angle = (hours - 6) * (Math.PI / 12);
-  const radius = 10;
+  const radius = 20;
 
   light.position.x = Math.cos(angle) * radius;
   light.position.y = Math.sin(angle) * radius;
-  light.position.z = 3;
+  light.position.z = 2;
 
   const noonDist = Math.abs(12 - hours) / 6;
   const color = new THREE.Color().lerpColors(
@@ -140,7 +158,16 @@ function updateSun(light: THREE.DirectionalLight) {
     Math.min(noonDist, 1)
   );
   light.color = color;
-  light.intensity = hours > 6 && hours < 20 ? 1.5 : 0.0;
+  
+  let daylightFactor = 0.0;
+  const isDay = hours > 4 && hours < 22;
+  if (isDay) {
+    daylightFactor = THREE.MathUtils.smoothstep(hours, 4, 8) - THREE.MathUtils.smoothstep(hours, 18, 22);
+  }
+
+  light.intensity = daylightFactor * 3.0;
+  scene.environmentIntensity = daylightFactor * 0.5;
+  ambientLight.intensity = (daylightFactor * 0.05) + 0.2;
   
   helper.update();
 }
@@ -181,3 +208,39 @@ function onSliderChange() {
 sliderWidth.addEventListener('input', onSliderChange);
 sliderHeight.addEventListener('input', onSliderChange);
 sliderDepth.addEventListener('input', onSliderChange);
+
+document.getElementById('btn-screenshot')?.addEventListener('click', () => {
+  helper.visible = false;
+  
+  renderer.render(scene, camera);
+  
+  const dataURL = renderer.domElement.toDataURL('image/png');
+  
+  const link = document.createElement('a');
+  link.download = `flux-design-${Date.now()}.png`;
+  link.href = dataURL;
+  link.click();
+
+  helper.visible = true;
+});
+
+document.getElementById('btn-specs')?.addEventListener('click', () => {
+  const matName = material.metalness > 0.5 ? "Brushed Steel" : "Oak Wood";
+  const viewName = currentView.toUpperCase();
+  
+  const content = `
+    CONFIGURATOR EXPORT
+    ------------------------
+    Item: ${viewName}
+    Material: ${matName}
+    Dimensions: ${sliderWidth.value}m x ${sliderHeight.value}m x ${sliderDepth.value}m
+    Date: ${new Date().toLocaleString()}
+  `;
+
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = 'config-specs.txt';
+  link.href = url;
+  link.click();
+});
