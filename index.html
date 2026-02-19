@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flux Material Studio</title>
+    <style>
+      body { margin: 0; background: #111; color: white; font-family: sans-serif; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+      #ui { position: absolute; width: 20px; left: 20px; display: flex; flex-direction: column; gap: 10px; padding: 2rem; }
+      button { padding: 10px; cursor: pointer; background: #333; color: white; border: 1px solid #555; min-width: 5vh; }
+    </style>
+  </head>
+  <body>
+    <div id="ui">
+      <div class="toggle-group" style="margin-bottom: 20px;">
+        <button id="view-chair">View Chair</button>
+        <button id="view-cabinet">View Cabinet</button>
+      </div>
+
+      <hr />
+      <div style="margin-bottom: 20px;">
+        <button id="btn-oak">Oak Wood</button>
+        <button id="btn-steel">Brushed Steel</button>
+      </div>
+
+      <div id="cabinet-controls" style="display: none;">
+        <label for="slider-w">Width: <span id="val-w">1.0</span>m</label>
+        <input type="range" id="slider-w" min="0.5" max="2.0" step="0.1" value="1.0">
+
+        <label for="slider-h">Height: <span id="val-h">1.5</span>m</label>
+        <input type="range" id="slider-h" min="0.5" max="2.5" step="0.1" value="1.5">
+        
+        <label for="slider-d">Depth: <span id="val-d">0.5</span>m</label>
+        <input type="range" id="slider-d" min="0.3" max="1.0" step="0.05" value="0.5">
+      </div>
+    </div>
+    <canvas id="app"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
